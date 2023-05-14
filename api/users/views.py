@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from .models import ConfirmEmailToken, Contact
 from .serializers import ContactSerializer, UserSerializer
-from .signals import new_user_registered
+from .tasks import new_user_registered_task
 
 
 class RegisterAccount(APIView):
@@ -42,7 +42,8 @@ class RegisterAccount(APIView):
                     user = user_serializer.save()
                     user.set_password(request.data['password'])
                     user.save()
-                    new_user_registered.send(sender=self.__class__, user_id=user.id)
+                    # new_user_registered.send(sender=self.__class__, user_id=user.id)
+                    new_user_registered_task.delay(user_id=user.id)
                     return JsonResponse({'Status': True})
                 else:
                     return JsonResponse({'Status': False, 'Errors': user_serializer.errors})

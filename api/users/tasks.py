@@ -1,14 +1,12 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.dispatch import Signal, receiver
-from django_rest_passwordreset.signals import reset_password_token_created
 
-from users.models import ConfirmEmailToken
+from api.celery import app
 
-new_user_registered = Signal(['user_id'])
+from .models import ConfirmEmailToken
 
 
-@receiver(reset_password_token_created)
+@app.task
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
     """
     Отправляем письмо с токеном для сброса пароля
@@ -34,17 +32,17 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
     msg.send()
 
 
-@receiver(new_user_registered)
-def new_user_registered_signal(user_id, **kwargs):
+@app.task
+def new_user_registered_task(user_id, **kwargs):
     """
-    Отправляем письмо с подтрердждением почты
+    Отправляем письмо с подтверждением почты
     """
     # send an e-mail to the user
     token, _ = ConfirmEmailToken.objects.get_or_create(user_id=user_id)
 
     msg = EmailMultiAlternatives(
         # title:
-        f"Password Reset Token for {token.user.email}",
+        f"Register token {token.user.email}",
         # message:
         token.key,
         # from:

@@ -1,7 +1,0 @@
-requests~=2.28.2
-Django==4.2
-django-filter
-djangorestframework~=3.14.0
-django_rest_passwordreset
-PyYAML~=6.0
-ujson~=5.7.0

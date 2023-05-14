@@ -1,16 +1,12 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.dispatch import Signal, receiver
 
+from api.celery import app
 from users.models import User
 
-new_user_registered = Signal(['user_id'])
 
-new_order = Signal(['user_id'])
-
-
-@receiver(new_order)
-def new_order_signal(user_id, **kwargs):
+@app.task
+def new_order_task(user_id, **kwargs):
     """
     Отправляем письмо при изменении статуса заказа
     """
