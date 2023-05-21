@@ -15,7 +15,6 @@ class RegisterAccount(APIView):
     """
     Класс для регистрации покупателей.
     """
-
     throttle_scope = 'register'
 
     # Регистрация методом POST
@@ -33,16 +32,12 @@ class RegisterAccount(APIView):
                     error_array.append(item)
                 return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
             else:
-                # проверяем данные для уникальности имени пользователя
-                request.data._mutable = True
-                request.data.update({})
                 user_serializer = UserSerializer(data=request.data)
                 if user_serializer.is_valid():
                     # сохраняем пользователя
                     user = user_serializer.save()
                     user.set_password(request.data['password'])
                     user.save()
-                    # new_user_registered.send(sender=self.__class__, user_id=user.id)
                     new_user_registered_task.delay(user_id=user.id)
                     return JsonResponse({'Status': True})
                 else:
@@ -71,6 +66,26 @@ class ConfirmAccount(APIView):
                 return Response({'Status': False, 'Errors': 'Неправильно указан токен или email'})
 
         return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+
+
+class LoginAccount(APIView):
+    """
+    Класс для авторизации пользователей.
+    """
+
+    throttle_scope = 'anon'
+
+    def post(self, request, *args, **kwargs):
+        if {'email', 'password'}.issubset(request.data):
+            user = authenticate(request, username=request.data['email'], password=request.data['password'])
+            if user is not None:
+                if user.is_active:
+                    token, _ = Token.objects.get_or_create(user=user)
+                    return Response({'Status': True, 'Token': token.key}, status=200)
+
+            return Response({'Status': False, 'Errors': 'Не удалось авторизовать'}, status=403)
+
+        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=401)
 
 
 class AccountDetails(APIView):
@@ -115,26 +130,6 @@ class AccountDetails(APIView):
             return JsonResponse({'Status': True})
         else:
             return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
-
-
-class LoginAccount(APIView):
-    """
-    Класс для авторизации пользователей.
-    """
-
-    throttle_scope = 'anon'
-
-    def post(self, request, *args, **kwargs):
-        if {'email', 'password'}.issubset(request.data):
-            user = authenticate(request, username=request.data['email'], password=request.data['password'])
-            if user is not None:
-                if user.is_active:
-                    token, _ = Token.objects.get_or_create(user=user)
-                    return Response({'Status': True, 'Token': token.key}, status=200)
-
-            return Response({'Status': False, 'Errors': 'Не удалось авторизовать'}, status=403)
-
-        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=401)
 
 
 class ContactView(APIView):

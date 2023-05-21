@@ -112,7 +112,7 @@ TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
-USE_L10N = True
+# USE_L10N = True
 
 USE_TZ = True
 
@@ -152,6 +152,9 @@ REST_FRAMEWORK = {
         'user': '100/day',
         'register': '100/day',
     },
+
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+
 }
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.AllowAllUsersModelBackend']

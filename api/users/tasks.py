@@ -7,6 +7,27 @@ from .models import ConfirmEmailToken
 
 
 @app.task
+def new_user_registered_task(user_id, **kwargs):
+    """
+    Отправляем письмо с подтверждением почты
+    """
+    # send an e-mail to the user
+    token, _ = ConfirmEmailToken.objects.get_or_create(user_id=user_id)
+
+    msg = EmailMultiAlternatives(
+        # title:
+        f"Register token {token.user.email}",
+        # message:
+        token.key,
+        # from:
+        settings.EMAIL_HOST_USER,
+        # to:
+        [token.user.email]
+    )
+    msg.send()
+
+
+@app.task
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
     """
     Отправляем письмо с токеном для сброса пароля
@@ -28,26 +49,5 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
         settings.EMAIL_HOST_USER,
         # to:
         [reset_password_token.user.email]
-    )
-    msg.send()
-
-
-@app.task
-def new_user_registered_task(user_id, **kwargs):
-    """
-    Отправляем письмо с подтверждением почты
-    """
-    # send an e-mail to the user
-    token, _ = ConfirmEmailToken.objects.get_or_create(user_id=user_id)
-
-    msg = EmailMultiAlternatives(
-        # title:
-        f"Register token {token.user.email}",
-        # message:
-        token.key,
-        # from:
-        settings.EMAIL_HOST_USER,
-        # to:
-        [token.user.email]
     )
     msg.send()
